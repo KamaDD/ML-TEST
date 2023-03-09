@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sign Language to Text and Speech</title>
+    <style>
+        video {
+            display: block;
+            margin: auto;
+            width: 640px;
+            height: 480px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sign Language to Text and Speech</h1>
+    <video id="video" autoplay></video>
+    <br>
+    <button id="capture">Capture</button>
+    <br>
+    <canvas id="canvas" style="display: none;"></canvas>
+    <div id="result"></div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function(stream) {
+                        var video = document.getElementById("video");
+                        video.srcObject = stream;
+                        video.play();
+                    })
+                    .catch(function(error) {
+                        console.log("Could not access webcam: " + error);
+                    });
+            }
+
+            $("#capture").click(function() {
+                var video = document.getElementById("video");
+                var canvas = document.getElementById("canvas");
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                var context = canvas.getContext("2d");
+                context.drawImage(video, 0, 0, canvas.width, canvas.height);
+                var dataURL = canvas.toDataURL("image/png");
+                $.ajax({
+                    url: "{{ url_for('predict') }}",
+                    type: "POST",
+                    data: {
+                        image: dataURL
+                    },
+                    success: function(response) {
+                        $("#result").html(response.result);
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>
